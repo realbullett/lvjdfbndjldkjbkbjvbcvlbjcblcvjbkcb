@@ -4,7 +4,7 @@ import { ConditionCard } from './components/ConditionCard';
 import { analyzePatientSymptoms, generatePatientSample, generateClinicalReport } from './services/assistantDoctorService';
 import { DiagnosisState } from './types';
 import { Sparkles, AlertOctagon, ArrowRight, FileText, Printer, Stethoscope, Zap, X, Mail, Copy, Check, ExternalLink, Heart, Image as ImageIcon, Upload } from 'lucide-react';
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 
 const App: React.FC = () => {
   const [input, setInput] = useState('');
