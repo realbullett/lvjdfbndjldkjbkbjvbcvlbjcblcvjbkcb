@@ -4,6 +4,7 @@ import { ConditionCard } from './components/ConditionCard';
 import { analyzePatientSymptoms, generatePatientSample, generateClinicalReport } from './services/assistantDoctorService';
 import { DiagnosisState } from './types';
 import { Sparkles, AlertOctagon, ArrowRight, FileText, Printer, Stethoscope, Zap, X, Mail, Copy, Check, ExternalLink, Heart, Image as ImageIcon, Upload } from 'lucide-react';
+import { Analytics } from "@vercel/analytics/react";
 
 const App: React.FC = () => {
   const [input, setInput] = useState('');
@@ -171,6 +172,8 @@ const App: React.FC = () => {
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] md:w-[1000px] h-[400px] md:h-[600px] bg-brand-primary opacity-10 blur-[80px] md:blur-[120px] rounded-full pointer-events-none z-0"></div>
       <div className="fixed bottom-0 right-0 w-[400px] md:w-[800px] h-[300px] md:h-[600px] bg-brand-accent opacity-5 blur-[80px] md:blur-[120px] rounded-full pointer-events-none z-0"></div>
       
+      <Analytics />
+
       <Header onContactClick={() => setShowContactModal(true)} />
 
       <main className="relative z-10 pt-24 md:pt-32 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
