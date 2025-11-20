@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LV Assistant Doctor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Outfit"', 'sans-serif'],
+            },
+            colors: {
+              brand: {
+                dark: '#05020A', // Deepest purple/black
+                panel: '#110C1D', // Panel background
+                border: '#2D243F',
+                primary: '#7C3AED', // Violet 600
+                accent: '#D946EF', // Fuchsia 500
+                glow: '#A78BFA',
+              }
+            },
+            animation: {
+              'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'glow': 'glow 2s ease-in-out infinite alternate',
+              'shimmer': 'shimmer 2s linear infinite',
+              'float': 'float 6s ease-in-out infinite',
+            },
+            keyframes: {
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              glow: {
+                'from': { boxShadow: '0 0 10px -5px #7C3AED' },
+                'to': { boxShadow: '0 0 20px 0px #D946EF' },
+              },
+              shimmer: {
+                '0%': { transform: 'translateX(-100%) skewX(-15deg)' },
+                '100%': { transform: 'translateX(200%) skewX(-15deg)' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-20px)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #05020A;
+        color: #E2E8F0;
+      }
+      .glass-panel {
+        background: rgba(17, 12, 29, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(124, 58, 237, 0.1);
+      }
+      .glass-panel-strong {
+        background: rgba(17, 12, 29, 0.9);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid rgba(124, 58, 237, 0.1);
+      }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #05020A;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #2D243F;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #4C1D95;
+      }
+      .text-gradient {
+        background: linear-gradient(to right, #A78BFA, #F472B6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      /* Report Content Styles */
+      .report-content {
+        font-family: 'Outfit', sans-serif;
+        color: #1e293b;
+        line-height: 1.6;
+      }
+      .report-content h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 4px;
+      }
+      .report-content h2 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #334155;
+        margin-top: 24px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .report-content p {
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+      .report-content ul {
+        list-style-type: disc;
+        padding-left: 20px;
+        margin-bottom: 16px;
+        font-size: 14px;
+      }
+      .report-content li {
+        margin-bottom: 6px;
+      }
+      .report-content strong {
+        color: #0f172a;
+        font-weight: 600;
+      }
+      .report-header-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 32px;
+        border-bottom: 2px solid #0f172a;
+        padding-bottom: 16px;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.2.0/client",
+    "react-dom/": "https://esm.sh/react-dom@19.2.0/",
+    "react/": "https://esm.sh/react@19.2.0/",
+    "@google/genai": "https://esm.sh/@google/genai@1.30.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.554.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
