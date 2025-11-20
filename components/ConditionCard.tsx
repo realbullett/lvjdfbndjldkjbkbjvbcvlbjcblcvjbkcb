@@ -15,19 +15,19 @@ export const ConditionCard: React.FC<ConditionCardProps> = ({ condition, rank })
     <div className={`
       relative rounded-2xl transition-all duration-300 overflow-hidden backdrop-blur-sm
       ${isTopMatch 
-        ? 'bg-brand-panel/80 border border-brand-primary/50 shadow-[0_0_30px_rgba(124,58,237,0.15)] scale-[1.01] z-10' 
+        ? 'bg-brand-panel/80 border border-brand-primary/50 shadow-[0_0_30px_rgba(124,58,237,0.15)] scale-[1.005] md:scale-[1.01] z-10' 
         : 'bg-brand-panel/40 border border-brand-border hover:border-brand-primary/30 hover:bg-brand-panel/60'
       }
     `}>
       {isTopMatch && (
         <div className="absolute top-0 right-0">
-          <div className="bg-gradient-to-l from-brand-primary to-purple-700 text-white text-[10px] uppercase font-bold tracking-widest px-4 py-1.5 rounded-bl-xl shadow-sm">
+          <div className="bg-gradient-to-l from-brand-primary to-purple-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 md:px-4 rounded-bl-xl shadow-sm">
             Primary Match
           </div>
         </div>
       )}
 
-      <div className="p-6 md:p-7">
+      <div className="p-5 md:p-7">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="flex items-start gap-4">
             <div className={`
@@ -39,8 +39,8 @@ export const ConditionCard: React.FC<ConditionCardProps> = ({ condition, rank })
               #{rank}
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white leading-tight">{condition.name}</h3>
-              {isTopMatch && <p className="text-sm text-brand-accent font-medium mt-1">Highest Confidence Analysis</p>}
+              <h3 className="text-lg md:text-xl font-bold text-white leading-tight pr-20 md:pr-0">{condition.name}</h3>
+              {isTopMatch && <p className="text-xs md:text-sm text-brand-accent font-medium mt-1">Highest Confidence Analysis</p>}
             </div>
           </div>
           <div className="self-start md:self-center">
@@ -56,12 +56,12 @@ export const ConditionCard: React.FC<ConditionCardProps> = ({ condition, rank })
           </div>
           
           {/* Probability Gauge - Redesigned for vertical layering */}
-          <div className="md:col-span-4 bg-black/20 rounded-xl p-4 border border-brand-border flex flex-col justify-center items-center relative overflow-hidden min-h-[120px]">
+          <div className="md:col-span-4 bg-black/20 rounded-xl p-4 border border-brand-border flex flex-col justify-center items-center relative overflow-hidden min-h-[100px] md:min-h-[120px]">
              {/* Ambient background for depth */}
              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-brand-primary/5 pointer-events-none" />
              
              <div className="relative z-10 flex flex-col items-center w-full">
-               <span className={`text-4xl font-bold mb-1 ${isTopMatch ? 'text-brand-glow drop-shadow-[0_0_8px_rgba(167,139,250,0.4)]' : 'text-gray-300'}`}>
+               <span className={`text-3xl md:text-4xl font-bold mb-1 ${isTopMatch ? 'text-brand-glow drop-shadow-[0_0_8px_rgba(167,139,250,0.4)]' : 'text-gray-300'}`}>
                   {condition.probability}%
                </span>
                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">
