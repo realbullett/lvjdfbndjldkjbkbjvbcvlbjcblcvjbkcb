@@ -1,4 +1,7 @@
 {
   "name": "LV Assistant Doctor",
-  "description": "Premium AI-powered health diagnostics by LV Health."
+  "description": "Premium AI-powered health diagnostics by LV Health.",
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

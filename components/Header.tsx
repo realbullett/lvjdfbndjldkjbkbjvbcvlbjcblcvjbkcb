@@ -1,15 +1,18 @@
 import React from 'react';
-import { Activity } from 'lucide-react';
+import { Activity, Pill, Stethoscope } from 'lucide-react';
+import { ViewMode } from '../types';
 
 interface HeaderProps {
   onContactClick: () => void;
+  currentView: ViewMode;
+  onViewChange: (view: ViewMode) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onContactClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onContactClick, currentView, onViewChange }) => {
   return (
     <header className="fixed w-full glass-panel-strong z-50 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
-        <div className="flex items-center gap-3 md:gap-4 group cursor-pointer">
+        <div className="flex items-center gap-3 md:gap-4 group cursor-pointer" onClick={() => onViewChange('diagnosis')}>
           {/* LV Logo Mark - Custom SVG */}
           <div className="w-9 h-9 md:w-11 md:h-11 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
             <svg viewBox="0 0 100 100" className="w-full h-full fill-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] opacity-90 group-hover:opacity-100 transition-opacity">
@@ -33,6 +36,33 @@ export const Header: React.FC<HeaderProps> = ({ onContactClick }) => {
         </div>
         
         <div className="flex items-center gap-3 md:gap-6">
+          
+          {/* Navigation Switcher */}
+          <div className="hidden md:flex items-center bg-white/5 rounded-lg p-1 border border-white/10">
+            <button
+              onClick={() => onViewChange('diagnosis')}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${
+                currentView === 'diagnosis' 
+                  ? 'bg-brand-primary text-white shadow-lg' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Stethoscope size={14} />
+              Diagnosis
+            </button>
+            <button
+              onClick={() => onViewChange('medication')}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${
+                currentView === 'medication' 
+                  ? 'bg-brand-accent text-white shadow-lg' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Pill size={14} />
+              Meds Info
+            </button>
+          </div>
+
           <button
             onClick={onContactClick}
             className="flex items-center gap-2 text-[10px] md:text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white bg-white/5 border border-white/10 hover:bg-white/10 hover:border-brand-primary/30 px-3 py-2 md:px-5 md:py-2.5 rounded-lg transition-all shadow-sm hover:shadow-[0_0_15px_rgba(124,58,237,0.2)]"
@@ -44,6 +74,34 @@ export const Header: React.FC<HeaderProps> = ({ onContactClick }) => {
             <span className="hidden sm:inline">SYSTEM ONLINE</span>
           </div>
         </div>
+      </div>
+
+      {/* Mobile View Switcher (Visible only on mobile) */}
+      <div className="md:hidden absolute top-16 w-full flex justify-center py-2 bg-brand-dark/90 backdrop-blur-md border-b border-white/5">
+        <div className="flex items-center bg-white/5 rounded-lg p-1 border border-white/10 scale-90">
+            <button
+              onClick={() => onViewChange('diagnosis')}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${
+                currentView === 'diagnosis' 
+                  ? 'bg-brand-primary text-white shadow-lg' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Stethoscope size={14} />
+              Diagnosis
+            </button>
+            <button
+              onClick={() => onViewChange('medication')}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${
+                currentView === 'medication' 
+                  ? 'bg-brand-accent text-white shadow-lg' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Pill size={14} />
+              Meds Info
+            </button>
+          </div>
       </div>
     </header>
   );

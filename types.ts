@@ -25,3 +25,44 @@ export interface DiagnosisState {
   loading: boolean;
   error: string | null;
 }
+
+// --- Medication Types ---
+
+export interface MedicationDetails {
+  name: string;
+  generic_name: string;
+  manufacturer: {
+    name: string;
+    country_of_origin: string;
+    country_of_distribution: string;
+  };
+  dates: {
+    production_date: string; // Extracted or "Not visible on packaging"
+    expiry_date: string;    // Extracted or "Not visible on packaging"
+  };
+  specifications: {
+    type: string; // Tablet, Syrup, etc.
+    dosage: string;
+    composition: string;
+  };
+  clinical_info: {
+    uses: string[];
+    administration_guide: string;
+    side_effects: string[];
+    warnings: string;
+  };
+}
+
+export interface MedicationResponse {
+  medication: MedicationDetails;
+  analysis_confidence: number; // 0-100
+  disclaimer: string;
+}
+
+export interface MedicationState {
+  results: MedicationResponse | null;
+  loading: boolean;
+  error: string | null;
+}
+
+export type ViewMode = 'diagnosis' | 'medication';

@@ -1,16 +1,29 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ConditionCard } from './components/ConditionCard';
-import { analyzePatientSymptoms, generatePatientSample, generateClinicalReport } from './services/assistantDoctorService';
-import { DiagnosisState } from './types';
-import { Sparkles, AlertOctagon, ArrowRight, FileText, Printer, Stethoscope, Zap, X, Mail, Copy, Check, ExternalLink, Heart, Image as ImageIcon, Upload } from 'lucide-react';
+import { analyzePatientSymptoms, generatePatientSample, generateClinicalReport, analyzeMedication } from './services/assistantDoctorService';
+import { DiagnosisState, MedicationState, ViewMode } from './types';
+import { Sparkles, AlertOctagon, ArrowRight, FileText, Printer, Stethoscope, Zap, X, Mail, Copy, Check, ExternalLink, Heart, Image as ImageIcon, Upload, Pill, Camera, Calendar, Factory, AlertTriangle, Info } from 'lucide-react';
 import { Analytics } from "@vercel/analytics/react";
 
 const App: React.FC = () => {
+  // View State
+  const [view, setView] = useState<ViewMode>('diagnosis');
+
+  // Inputs
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
+  // Diagnosis State
   const [isGenerating, setIsGenerating] = useState(false);
-  const [state, setState] = useState<DiagnosisState>({
+  const [diagnosisState, setDiagnosisState] = useState<DiagnosisState>({
+    results: null,
+    loading: false,
+    error: null,
+  });
+
+  // Medication State
+  const [medicationState, setMedicationState] = useState<MedicationState>({
     results: null,
     loading: false,
     error: null,
@@ -24,22 +37,74 @@ const App: React.FC = () => {
   // Contact Modal State
   const [showContactModal, setShowContactModal] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Camera State
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   
   const resultsRef = useRef<HTMLDivElement>(null);
+  const medResultsRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAnalyze = async (e: React.FormEvent) => {
+  // --- Switching Logic ---
+  const handleViewChange = (newView: ViewMode) => {
+    setView(newView);
+    handleClear(); // Reset inputs when switching
+  };
+
+  // --- Camera Logic ---
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      setStream(mediaStream);
+      setShowCamera(true);
+    } catch (err) {
+      alert("Unable to access camera. Please check permissions.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  useEffect(() => {
+    if (showCamera && videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [showCamera, stream]);
+
+  const captureImage = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        const dataUrl = canvas.toDataURL('image/png');
+        setSelectedImage(dataUrl);
+        stopCamera();
+      }
+    }
+  };
+
+  // --- Diagnosis Logic ---
+  const handleAnalyzeDiagnosis = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() && !selectedImage) return;
 
-    setState({ ...state, loading: true, error: null });
-    setReportHtml(''); // Reset report
+    setDiagnosisState({ ...diagnosisState, loading: true, error: null });
+    setReportHtml('');
 
     try {
-      // Provide default text if only image is provided
       const promptText = input.trim() || "Please analyze the symptoms present in the attached image.";
       const data = await analyzePatientSymptoms(promptText, selectedImage || undefined);
-      setState({
+      setDiagnosisState({
         results: data,
         loading: false,
         error: null,
@@ -50,7 +115,7 @@ const App: React.FC = () => {
       }, 100);
       
     } catch (err: any) {
-      setState({
+      setDiagnosisState({
         results: null,
         loading: false,
         error: err.message || "An error occurred during diagnosis.",
@@ -58,8 +123,37 @@ const App: React.FC = () => {
     }
   };
 
+  // --- Medication Logic ---
+  const handleAnalyzeMedication = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() && !selectedImage) return;
+
+    setMedicationState({ ...medicationState, loading: true, error: null });
+
+    try {
+      const promptText = input.trim() || "Analyze this medication image.";
+      const data = await analyzeMedication(promptText, selectedImage || undefined);
+      setMedicationState({
+        results: data,
+        loading: false,
+        error: null,
+      });
+
+      setTimeout(() => {
+        medResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+
+    } catch (err: any) {
+      setMedicationState({
+        results: null,
+        loading: false,
+        error: err.message || "An error occurred during medication analysis.",
+      });
+    }
+  };
+
   const handleGenerateSample = async () => {
-    if (state.loading || isGenerating) return;
+    if (diagnosisState.loading || isGenerating) return;
     setIsGenerating(true);
     try {
       const sample = await generatePatientSample();
@@ -74,7 +168,8 @@ const App: React.FC = () => {
   const handleClear = () => {
     setInput('');
     setSelectedImage(null);
-    setState({ results: null, loading: false, error: null });
+    setDiagnosisState({ results: null, loading: false, error: null });
+    setMedicationState({ results: null, loading: false, error: null });
     setReportHtml('');
   };
 
@@ -87,7 +182,6 @@ const App: React.FC = () => {
       };
       reader.readAsDataURL(file);
     }
-    // Reset input so same file can be selected again if needed
     if (fileInputRef.current) {
         fileInputRef.current.value = '';
     }
@@ -112,7 +206,7 @@ const App: React.FC = () => {
   };
 
   const handleViewReport = async () => {
-    if (!state.results) return;
+    if (!diagnosisState.results) return;
     
     setShowReportModal(true);
     
@@ -120,7 +214,7 @@ const App: React.FC = () => {
       setGeneratingReport(true);
       try {
         const promptText = input.trim() || (selectedImage ? "Analysis based on provided medical image." : "");
-        const html = await generateClinicalReport(state.results, promptText);
+        const html = await generateClinicalReport(diagnosisState.results, promptText);
         setReportHtml(html);
       } catch (e) {
         setReportHtml('<p>Error loading report.</p>');
@@ -165,6 +259,8 @@ const App: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const isLoading = diagnosisState.loading || medicationState.loading;
+
   return (
     <div className="min-h-screen font-sans pb-20 selection:bg-brand-accent selection:text-white relative overflow-x-hidden">
       
@@ -174,34 +270,49 @@ const App: React.FC = () => {
       
       <Analytics />
 
-      <Header onContactClick={() => setShowContactModal(true)} />
+      <Header onContactClick={() => setShowContactModal(true)} currentView={view} onViewChange={handleViewChange} />
 
-      <main className="relative z-10 pt-24 md:pt-32 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="relative z-10 pt-28 md:pt-32 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Hero Section */}
+        {/* Hero Section (Dynamic based on view) */}
         <div className="relative text-center max-w-3xl mx-auto mb-10 md:mb-16">
           
-          {/* 3D Floating Stethoscope */}
+          {/* 3D Floating Stethoscope (Diagnosis) / Pill (Medication) */}
           <div className="hidden md:block absolute -top-24 -right-16 w-64 h-64 animate-float pointer-events-none select-none z-0 opacity-90">
             <img 
-              src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Stethoscope.png"
-              alt="3D Stethoscope"
+              src={view === 'diagnosis' 
+                ? "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Stethoscope.png"
+                : "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Pill.png"
+              }
+              alt="3D Icon"
               className="w-full h-full object-contain drop-shadow-[0_0_35px_rgba(124,58,237,0.3)] rotate-12"
             />
           </div>
 
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6 md:mb-8 shadow-lg backdrop-blur-sm">
-              <Sparkles size={14} className="text-brand-accent" />
-              <span className="text-[10px] md:text-xs font-bold text-gray-300 uppercase tracking-widest">Next Gen AI Diagnostics</span>
+              {view === 'diagnosis' ? (
+                <>
+                  <Sparkles size={14} className="text-brand-accent" />
+                  <span className="text-[10px] md:text-xs font-bold text-gray-300 uppercase tracking-widest">Next Gen AI Diagnostics</span>
+                </>
+              ) : (
+                <>
+                  <Pill size={14} className="text-brand-accent" />
+                  <span className="text-[10px] md:text-xs font-bold text-gray-300 uppercase tracking-widest">Precision Pharma Intelligence</span>
+                </>
+              )}
             </div>
             
             <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold text-white tracking-tight mb-4 md:mb-6 leading-tight">
-              Precision Care.<br />
-              <span className="text-gradient">Elevated.</span>
+              {view === 'diagnosis' ? 'Precision Care.' : 'Know Your Meds.'}<br />
+              <span className="text-gradient">{view === 'diagnosis' ? 'Elevated.' : 'Verified.'}</span>
             </h2>
             <p className="text-base md:text-xl text-gray-400 leading-relaxed max-w-xl mx-auto font-light px-2">
-              Experience the future of personal health with <span className="text-white font-medium">LV Assistant Doctor</span>. Clinical-grade analysis at the speed of thought.
+              {view === 'diagnosis' 
+                ? <><span className="text-white font-medium">Assistant Doctor</span> provides clinical-grade analysis at the speed of thought.</>
+                : <>Instantly analyze medications. Identify pills, check expiry, and understand details with <span className="text-white font-medium">PhD-level accuracy</span>.</>
+              }
             </p>
           </div>
         </div>
@@ -210,17 +321,17 @@ const App: React.FC = () => {
         <div className="max-w-4xl mx-auto mb-16 md:mb-24">
           <div className="glass-panel rounded-2xl md:rounded-3xl overflow-hidden relative group transition-all duration-500 hover:shadow-[0_0_40px_rgba(124,58,237,0.15)]">
             
-            <form onSubmit={handleAnalyze} className="p-0">
+            <form onSubmit={view === 'diagnosis' ? handleAnalyzeDiagnosis : handleAnalyzeMedication} className="p-0">
               <div className="relative flex flex-col">
                 
-                {/* Image Preview Section - Inside Input */}
+                {/* Image Preview Section */}
                 {selectedImage && (
                     <div className="px-5 md:px-8 pt-6 pb-2">
                         <div className="relative inline-block group animate-fade-in-up">
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             <img 
                                 src={selectedImage} 
-                                alt="Medical Reference" 
+                                alt="Reference" 
                                 className="h-24 md:h-32 w-auto rounded-lg border border-white/20 shadow-lg object-cover" 
                             />
                             <button 
@@ -241,9 +352,12 @@ const App: React.FC = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onPaste={handlePaste}
-                  placeholder="Describe your symptoms in detail or paste a medical image... (e.g., 'Intermittent migraine with visual aura...')"
+                  placeholder={view === 'diagnosis' 
+                    ? "Describe symptoms in detail or paste a medical image... (e.g., 'Intermittent migraine with visual aura...')"
+                    : "Enter medication name or capture an image of the packaging/pill... (e.g., 'Amoxicillin 500mg')"
+                  }
                   className="w-full min-h-[150px] md:min-h-[180px] p-5 md:p-8 text-base md:text-xl text-gray-100 placeholder-gray-600 bg-transparent border-none outline-none resize-none focus:ring-0 leading-relaxed font-light"
-                  disabled={state.loading}
+                  disabled={isLoading}
                 />
                 
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-5 py-4 md:px-8 md:py-6 bg-black/20 border-t border-white/5 gap-4 backdrop-blur-md">
@@ -254,9 +368,9 @@ const App: React.FC = () => {
                         <span className="sm:hidden">AI</span>
                       </div>
                       
-                      {/* Image Upload Button */}
                       <div className="h-4 w-px bg-white/10"></div>
                       
+                      {/* Upload Button */}
                       <input 
                         type="file" 
                         ref={fileInputRef} 
@@ -267,45 +381,65 @@ const App: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        disabled={state.loading}
+                        disabled={isLoading}
                         className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-white transition-colors group"
                       >
                         <ImageIcon size={14} className="group-hover:text-brand-glow transition-colors" />
-                        <span className="group-hover:text-gray-300 transition-colors">Add Image</span>
+                        <span className="group-hover:text-gray-300 transition-colors">Upload</span>
                       </button>
 
-                      <div className="h-4 w-px bg-white/10 md:hidden"></div>
-                       {/* Example Case Button (Mobile) */}
-                       <button 
-                        type="button"
-                        onClick={handleGenerateSample}
-                        disabled={state.loading || isGenerating}
-                        className="md:hidden flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-brand-accent transition-colors"
-                      >
-                        <Sparkles size={14} className={isGenerating ? "animate-spin" : ""} />
-                        Example
-                      </button>
+                      {/* Camera Button for Medication View */}
+                      {view === 'medication' && (
+                        <>
+                          <div className="h-4 w-px bg-white/10"></div>
+                          <button
+                            type="button"
+                            onClick={startCamera}
+                            disabled={isLoading}
+                            className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-white transition-colors group"
+                          >
+                            <Camera size={14} className="group-hover:text-brand-accent transition-colors" />
+                            <span className="group-hover:text-gray-300 transition-colors">Capture</span>
+                          </button>
+                        </>
+                      )}
+
+                      {view === 'diagnosis' && (
+                         <>
+                            <div className="h-4 w-px bg-white/10 md:hidden"></div>
+                            <button 
+                              type="button"
+                              onClick={handleGenerateSample}
+                              disabled={isLoading || isGenerating}
+                              className="md:hidden flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-brand-accent transition-colors"
+                            >
+                              <Sparkles size={14} className={isGenerating ? "animate-spin" : ""} />
+                              Example
+                            </button>
+                         </>
+                      )}
                   </div>
                   
                   <div className="flex flex-col-reverse sm:flex-row items-center gap-4 w-full md:w-auto justify-end mt-2 md:mt-0">
                     
-                    {/* Example Case Button (Desktop) */}
-                    <button 
-                      type="button"
-                      onClick={handleGenerateSample}
-                      disabled={state.loading || isGenerating}
-                      className="hidden md:flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-brand-accent transition-colors px-2 py-2"
-                    >
-                      <Sparkles size={14} className={isGenerating ? "animate-spin" : ""} />
-                      {isGenerating ? "Generating..." : "Example Case"}
-                    </button>
+                    {view === 'diagnosis' && (
+                      <button 
+                        type="button"
+                        onClick={handleGenerateSample}
+                        disabled={isLoading || isGenerating}
+                        className="hidden md:flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-brand-accent transition-colors px-2 py-2"
+                      >
+                        <Sparkles size={14} className={isGenerating ? "animate-spin" : ""} />
+                        {isGenerating ? "Generating..." : "Example Case"}
+                      </button>
+                    )}
 
                     {(input || selectedImage) && (
                       <button
                         type="button"
                         onClick={handleClear}
                         className="text-sm font-medium text-gray-500 hover:text-white px-4 py-2 transition-colors w-full sm:w-auto"
-                        disabled={state.loading}
+                        disabled={isLoading}
                       >
                         Reset
                       </button>
@@ -313,29 +447,32 @@ const App: React.FC = () => {
                     
                     <button
                       type="submit"
-                      disabled={state.loading || (!input.trim() && !selectedImage)}
+                      disabled={isLoading || (!input.trim() && !selectedImage)}
                       className={`
                         group relative w-full sm:w-auto overflow-hidden rounded-xl px-8 py-3 md:py-4 font-bold text-white transition-all duration-200
-                        ${state.loading || (!input.trim() && !selectedImage)
+                        ${isLoading || (!input.trim() && !selectedImage)
                           ? 'bg-gray-800 cursor-not-allowed text-gray-600 opacity-50 shadow-none'
-                          : 'bg-gradient-to-r from-brand-primary to-brand-accent shadow-[0_6px_0_rgb(76,29,149)] hover:shadow-[0_8px_0_rgb(76,29,149)] hover:-translate-y-1 active:shadow-none active:translate-y-[6px]'
+                          : view === 'diagnosis' 
+                              ? 'bg-gradient-to-r from-brand-primary to-brand-accent shadow-[0_6px_0_rgb(76,29,149)] hover:shadow-[0_8px_0_rgb(76,29,149)] hover:-translate-y-1 active:shadow-none active:translate-y-[6px]'
+                              : 'bg-gradient-to-r from-pink-600 to-purple-600 shadow-[0_6px_0_rgb(157,23,77)] hover:shadow-[0_8px_0_rgb(157,23,77)] hover:-translate-y-1 active:shadow-none active:translate-y-[6px]'
                         }
                       `}
                     >
-                      {/* 3D Shimmer Effect */}
-                      {!state.loading && (input.trim() || selectedImage) && (
+                      {!isLoading && (input.trim() || selectedImage) && (
                          <div className="absolute inset-0 -translate-x-full group-hover:animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent z-10" />
                       )}
 
                       <div className="relative z-20 flex items-center justify-center gap-2">
-                        {state.loading ? (
+                        {isLoading ? (
                           <>
                             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             <span className="text-sm tracking-widest uppercase drop-shadow-md">Processing</span>
                           </>
                         ) : (
                           <>
-                            <span className="text-sm tracking-widest uppercase drop-shadow-md group-hover:scale-105 transition-transform">Run Diagnosis</span>
+                            <span className="text-sm tracking-widest uppercase drop-shadow-md group-hover:scale-105 transition-transform">
+                                {view === 'diagnosis' ? 'Run Diagnosis' : 'Analyze Meds'}
+                            </span>
                             <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
                           </>
                         )}
@@ -348,35 +485,33 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Support Section - Only visible when no results to keep diagnosis clean */}
-        {!state.results && !state.loading && (
+        {/* Support Section */}
+        {!diagnosisState.results && !medicationState.results && !isLoading && (
           <div className="max-w-2xl mx-auto text-center -mt-8 md:-mt-12 mb-24 px-4 md:px-6 opacity-80 hover:opacity-100 transition-opacity duration-500">
              <div className="inline-flex items-center gap-2 text-brand-primary mb-4 bg-brand-primary/5 px-4 py-1.5 rounded-full border border-brand-primary/10">
                 <Heart size={14} className="fill-brand-primary/20" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">Support Our Growth</span>
              </div>
              <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
-               Help us democratize precision health. If LV Health has empowered you, please consider sharing <span className="text-white font-medium">Assistant Doctor</span> with friends and family 
-               to help them better understand their daily health.
+               Help us democratize precision health. If LV Health has empowered you, please consider sharing <span className="text-white font-medium">Assistant Doctor</span> with friends and family.
              </p>
           </div>
         )}
 
-        {/* Results Section */}
-        {(state.results || state.error) && (
+        {/* --- Diagnosis Results --- */}
+        {view === 'diagnosis' && (diagnosisState.results || diagnosisState.error) && (
           <div ref={resultsRef} className="animate-fade-in-up space-y-8 md:space-y-10 pb-20">
-            
-            {state.error ? (
+            {diagnosisState.error ? (
                <div className="max-w-2xl mx-auto bg-red-900/20 border border-red-500/30 rounded-2xl p-6 md:p-8 text-center backdrop-blur-sm">
                  <div className="w-12 h-12 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
                    <AlertOctagon size={24} />
                  </div>
                  <h3 className="text-lg font-bold text-red-200 mb-2">Analysis Interrupted</h3>
-                 <p className="text-red-400/80 text-sm">{state.error}</p>
+                 <p className="text-red-400/80 text-sm">{diagnosisState.error}</p>
                </div>
-            ) : state.results && (
+            ) : diagnosisState.results && (
               <>
-                {/* Report Header */}
+                {/* Diagnosis Content (Same as before) */}
                 <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8 border-b border-white/10 pb-6">
                   <div className="flex items-center gap-4">
                     <div className="bg-brand-primary/20 p-3 rounded-xl text-brand-glow border border-brand-primary/30">
@@ -387,8 +522,6 @@ const App: React.FC = () => {
                         <p className="text-xs md:text-sm text-gray-500">ID: {Math.random().toString(36).substr(2, 9).toUpperCase()} • LV Health AI</p>
                     </div>
                   </div>
-                  
-                  {/* Detailed Report Button */}
                   <button 
                     onClick={handleViewReport}
                     className="ml-auto w-full md:w-auto flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white bg-white/5 border border-white/10 hover:border-white/30 px-5 py-2.5 rounded-lg transition-all group"
@@ -398,10 +531,8 @@ const App: React.FC = () => {
                   </button>
                 </div>
 
-                {/* AI Insight Box */}
                 <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 md:p-8 border border-white/10 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-96 h-96 bg-brand-primary/20 rounded-full blur-[80px] transform translate-x-1/2 -translate-y-1/2"></div>
-                  
                   <div className="relative z-10 flex flex-col md:grid md:grid-cols-3 gap-6 md:gap-10">
                     <div className="md:col-span-2 space-y-6">
                       <div className="flex items-center gap-2 text-brand-accent text-xs font-bold uppercase tracking-widest">
@@ -409,18 +540,16 @@ const App: React.FC = () => {
                         Synopsis
                       </div>
                       <p className="text-base md:text-lg text-gray-200 leading-relaxed font-light">
-                        {state.results.general_advice}
+                        {diagnosisState.results.general_advice}
                       </p>
                       <div className="pt-4">
                         <div className="inline-block bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-[11px] text-red-300 uppercase tracking-wider w-full md:w-auto">
-                           <span className="font-bold text-red-400 mr-2 block md:inline">DISCLAIMER:</span> {state.results.disclaimer}
+                           <span className="font-bold text-red-400 mr-2 block md:inline">DISCLAIMER:</span> {diagnosisState.results.disclaimer}
                         </div>
                       </div>
                     </div>
-
-                    {/* Urgency Indicator */}
                     <div className="flex flex-col justify-center border-t md:border-t-0 md:border-l border-white/5 pt-6 md:pt-0 pl-0 md:pl-10">
-                      {state.results.conditions.some(c => ['High', 'Critical'].includes(c.urgency)) ? (
+                      {diagnosisState.results.conditions.some(c => ['High', 'Critical'].includes(c.urgency)) ? (
                         <div className="text-center">
                           <div className="inline-flex p-4 rounded-full bg-red-500/10 text-red-500 mb-4 animate-pulse border border-red-500/20">
                              <AlertOctagon size={32} />
@@ -441,20 +570,19 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Results Grid */}
                 <div className="grid grid-cols-1 gap-8">
                   <div>
                     <div className="flex items-center justify-between mb-6">
                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Primary Diagnosis</h3>
                     </div>
-                    <ConditionCard condition={state.results.conditions[0]} rank={1} />
+                    <ConditionCard condition={diagnosisState.results.conditions[0]} rank={1} />
                   </div>
 
-                  {state.results.conditions.length > 1 && (
+                  {diagnosisState.results.conditions.length > 1 && (
                     <div>
                       <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Differential Diagnoses</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {state.results.conditions.slice(1).map((condition, idx) => (
+                        {diagnosisState.results.conditions.slice(1).map((condition, idx) => (
                           <ConditionCard key={idx} condition={condition} rank={idx + 2} />
                         ))}
                       </div>
@@ -466,12 +594,145 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Report Modal */}
+        {/* --- Medication Results --- */}
+        {view === 'medication' && (medicationState.results || medicationState.error) && (
+           <div ref={medResultsRef} className="animate-fade-in-up space-y-8 pb-20">
+             {medicationState.error ? (
+               <div className="max-w-2xl mx-auto bg-red-900/20 border border-red-500/30 rounded-2xl p-6 text-center">
+                 <p className="text-red-400">{medicationState.error}</p>
+               </div>
+             ) : medicationState.results && (
+               <>
+                  {/* Monograph Header */}
+                  <div className="glass-panel rounded-3xl p-8 relative overflow-hidden border-l-4 border-l-brand-accent">
+                    <div className="absolute top-0 right-0 p-6 opacity-10">
+                      <Factory size={120} className="text-white" />
+                    </div>
+                    
+                    <div className="relative z-10">
+                      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+                         <div>
+                            <h2 className="text-3xl md:text-4xl font-bold text-white mb-1">{medicationState.results.medication.name}</h2>
+                            <p className="text-xl text-brand-accent font-light">{medicationState.results.medication.generic_name}</p>
+                         </div>
+                         <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
+                            <span className="text-xs text-gray-400 block uppercase tracking-wider mb-1">Analysis Confidence</span>
+                            <div className="flex items-center gap-2">
+                               <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                  <div style={{width: `${medicationState.results.analysis_confidence}%`}} className="h-full bg-brand-accent rounded-full" />
+                                </div>
+                                <span className="text-white font-bold">{medicationState.results.analysis_confidence}%</span>
+                            </div>
+                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                        {/* Manufacturer */}
+                        <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                           <div className="flex items-center gap-2 text-gray-400 mb-2">
+                              <Factory size={14} />
+                              <span className="text-xs font-bold uppercase tracking-wider">Manufacturer</span>
+                           </div>
+                           <p className="text-white font-medium">{medicationState.results.medication.manufacturer.name}</p>
+                           <div className="flex gap-2 mt-2 text-xs text-gray-500">
+                              <span>Origin: {medicationState.results.medication.manufacturer.country_of_origin}</span>
+                           </div>
+                        </div>
+
+                        {/* Dates */}
+                        <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                           <div className="flex items-center gap-2 text-gray-400 mb-2">
+                              <Calendar size={14} />
+                              <span className="text-xs font-bold uppercase tracking-wider">Dates (From Image)</span>
+                           </div>
+                           <div className="space-y-1">
+                             <div className="flex justify-between text-sm">
+                               <span className="text-gray-500">Mfg Date:</span>
+                               <span className="text-white">{medicationState.results.medication.dates.production_date}</span>
+                             </div>
+                             <div className="flex justify-between text-sm">
+                               <span className="text-gray-500">Exp Date:</span>
+                               <span className={`font-bold ${medicationState.results.medication.dates.expiry_date.includes('Not') ? 'text-gray-400' : 'text-brand-accent'}`}>
+                                 {medicationState.results.medication.dates.expiry_date}
+                               </span>
+                             </div>
+                           </div>
+                        </div>
+                        
+                        {/* Specs */}
+                         <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                           <div className="flex items-center gap-2 text-gray-400 mb-2">
+                              <Info size={14} />
+                              <span className="text-xs font-bold uppercase tracking-wider">Specifications</span>
+                           </div>
+                           <p className="text-white text-sm"><span className="text-gray-500">Type:</span> {medicationState.results.medication.specifications.type}</p>
+                           <p className="text-white text-sm"><span className="text-gray-500">Dosage:</span> {medicationState.results.medication.specifications.dosage}</p>
+                           <p className="text-white text-sm truncate" title={medicationState.results.medication.specifications.composition}><span className="text-gray-500">Active:</span> {medicationState.results.medication.specifications.composition}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clinical Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     {/* Uses */}
+                     <div className="glass-panel p-6 rounded-2xl border-t border-t-brand-primary/50">
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                          <Check size={18} className="text-brand-primary" /> Official Indications
+                        </h3>
+                        <ul className="space-y-2">
+                          {medicationState.results.medication.clinical_info.uses.map((use, i) => (
+                            <li key={i} className="text-gray-300 text-sm flex items-start gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-1.5 shrink-0" />
+                              {use}
+                            </li>
+                          ))}
+                        </ul>
+                     </div>
+
+                     {/* Administration */}
+                     <div className="glass-panel p-6 rounded-2xl">
+                        <h3 className="text-lg font-bold text-white mb-4">Administration Guide</h3>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          {medicationState.results.medication.clinical_info.administration_guide}
+                        </p>
+                     </div>
+
+                     {/* Warnings */}
+                     <div className="glass-panel p-6 rounded-2xl border border-red-500/20 bg-red-900/5">
+                        <h3 className="text-lg font-bold text-red-200 mb-4 flex items-center gap-2">
+                          <AlertTriangle size={18} className="text-red-400" /> Critical Warnings
+                        </h3>
+                         <p className="text-gray-300 text-sm leading-relaxed">
+                          {medicationState.results.medication.clinical_info.warnings}
+                        </p>
+                     </div>
+
+                      {/* Side Effects */}
+                     <div className="glass-panel p-6 rounded-2xl">
+                        <h3 className="text-lg font-bold text-white mb-4">Potential Side Effects</h3>
+                        <div className="flex flex-wrap gap-2">
+                           {medicationState.results.medication.clinical_info.side_effects.map((effect, i) => (
+                             <span key={i} className="text-xs bg-white/5 text-gray-400 px-3 py-1 rounded-full border border-white/10">
+                               {effect}
+                             </span>
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+                  
+                  <div className="text-center text-xs text-gray-500 mt-8 max-w-2xl mx-auto">
+                    {medicationState.results.disclaimer}
+                  </div>
+               </>
+             )}
+           </div>
+        )}
+
+        {/* Report Modal (Diagnosis Only) */}
         {showReportModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 md:p-4 bg-black/80 backdrop-blur-sm">
             <div className="bg-white rounded-xl w-[95%] md:w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl animate-fade-in-up relative">
-              
-              {/* Modal Header */}
               <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
                 <div className="flex items-center gap-3">
                    <div className="w-8 h-8 bg-brand-primary flex items-center justify-center rounded-lg shrink-0">
@@ -486,8 +747,6 @@ const App: React.FC = () => {
                   <X size={20} />
                 </button>
               </div>
-
-              {/* Modal Content */}
               <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-white">
                 {generatingReport ? (
                   <div className="h-full flex flex-col items-center justify-center text-gray-400">
@@ -501,8 +760,6 @@ const App: React.FC = () => {
                   />
                 )}
               </div>
-
-              {/* Modal Footer */}
               <div className="px-4 md:px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-end gap-3">
                  <button 
                    onClick={() => setShowReportModal(false)}
@@ -528,7 +785,6 @@ const App: React.FC = () => {
         {showContactModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
             <div className="bg-[#0F0A1F] border border-brand-primary/20 rounded-2xl w-full max-w-md shadow-[0_0_50px_rgba(124,58,237,0.2)] relative overflow-hidden">
-                {/* Background Effects */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-primary to-brand-accent"></div>
                 <div className="absolute -top-20 -right-20 w-40 h-40 bg-brand-primary/20 blur-[50px] rounded-full pointer-events-none"></div>
                 
@@ -581,6 +837,25 @@ const App: React.FC = () => {
                         </p>
                     </div>
                 </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Camera Modal */}
+        {showCamera && (
+          <div className="fixed inset-0 z-[200] bg-black flex flex-col items-center justify-center">
+            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+            <div className="absolute bottom-10 flex gap-6 items-center">
+               <button 
+                 onClick={stopCamera} 
+                 className="bg-gray-800 text-white p-4 rounded-full hover:bg-gray-700 transition-colors"
+               >
+                 <X size={24} />
+               </button>
+               <button 
+                 onClick={captureImage} 
+                 className="bg-white border-4 border-gray-300 w-20 h-20 rounded-full hover:scale-105 transition-transform shadow-lg"
+               />
             </div>
           </div>
         )}

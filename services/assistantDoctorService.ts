@@ -1,8 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { DiagnosisResponse } from "../types";
+import { DiagnosisResponse, MedicationResponse } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+// --- Diagnosis Schema ---
 const DIAGNOSIS_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -25,6 +26,55 @@ const DIAGNOSIS_SCHEMA = {
     general_advice: { type: Type.STRING, description: "High-level clinical synopsis and patient guidance." },
   },
   required: ["conditions", "disclaimer", "general_advice"],
+};
+
+// --- Medication Schema ---
+const MEDICATION_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    medication: {
+      type: Type.OBJECT,
+      properties: {
+        name: { type: Type.STRING, description: "Brand name of the medication" },
+        generic_name: { type: Type.STRING, description: "Generic/Scientific name" },
+        manufacturer: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            country_of_origin: { type: Type.STRING },
+            country_of_distribution: { type: Type.STRING },
+          }
+        },
+        dates: {
+          type: Type.OBJECT,
+          properties: {
+            production_date: { type: Type.STRING, description: "Date extracted from image text if visible, otherwise state 'Not visible'" },
+            expiry_date: { type: Type.STRING, description: "Date extracted from image text if visible, otherwise state 'Not visible'" },
+          }
+        },
+        specifications: {
+          type: Type.OBJECT,
+          properties: {
+            type: { type: Type.STRING, description: "Tablet, Capsule, Syrup, Injection, etc." },
+            dosage: { type: Type.STRING, description: "e.g., 500mg, 10ml" },
+            composition: { type: Type.STRING, description: "Active chemical ingredients" },
+          }
+        },
+        clinical_info: {
+          type: Type.OBJECT,
+          properties: {
+            uses: { type: Type.ARRAY, items: { type: Type.STRING } },
+            administration_guide: { type: Type.STRING, description: "How/When to take, with food/without food, etc." },
+            side_effects: { type: Type.ARRAY, items: { type: Type.STRING } },
+            warnings: { type: Type.STRING, description: "Major contraindications or box warnings" },
+          }
+        }
+      }
+    },
+    analysis_confidence: { type: Type.NUMBER, description: "Confidence in identification 0-100" },
+    disclaimer: { type: Type.STRING },
+  },
+  required: ["medication", "analysis_confidence", "disclaimer"],
 };
 
 export const analyzePatientSymptoms = async (symptoms: string, image?: string): Promise<DiagnosisResponse> => {
@@ -69,7 +119,6 @@ export const analyzePatientSymptoms = async (symptoms: string, image?: string): 
           }
         });
       } else {
-        // Fallback if just base64 string provided without data URI prefix (assume png)
         parts.push({
           inlineData: {
             mimeType: 'image/png',
@@ -91,7 +140,7 @@ export const analyzePatientSymptoms = async (symptoms: string, image?: string): 
         systemInstruction: systemInstruction,
         responseMimeType: "application/json",
         responseSchema: DIAGNOSIS_SCHEMA,
-        temperature: 0.2, // Lower temperature for high precision and less hallucination
+        temperature: 0.2,
       },
     });
 
@@ -107,6 +156,69 @@ export const analyzePatientSymptoms = async (symptoms: string, image?: string): 
   }
 };
 
+export const analyzeMedication = async (query: string, image?: string): Promise<MedicationResponse> => {
+  try {
+    const modelId = 'gemini-2.5-flash';
+    
+    const systemInstruction = `
+      You are the LV Health "Pharma-Mind" AI, a PhD-level Clinical Pharmacist and Pharmaceutical Researcher with encyclopedic knowledge of global drug databases.
+      
+      YOUR TASK:
+      Analyze the provided medication name or image (packaging, tablet, bottle, prescription) and provide a 100% accurate, minute detailed monograph.
+      
+      CAPABILITIES (OCR & VISUAL ANALYSIS):
+      - If an image is provided, you MUST perform OCR to read specific text:
+        - **Batch Numbers, Expiry Dates, Manufacturing Dates**: Look for "Exp:", "Mfg:", "Use By". If visible, extract them EXACTLY. If not visible/blurry, explicitly state "Not visible in provided image".
+        - **Manufacturer**: Look for logos and company names. Infer country of origin/distribution based on the packaging language and brand regulations (e.g., FDA vs EMA packaging).
+        - **Dosage/Strength**: Extract numbers (e.g., 500mg, 20mg).
+      
+      KNOWLEDGE RETRIEVAL:
+      - Retrieve mechanism of action, precise chemical composition, official indications, and strict administration guidelines.
+      
+      OUTPUT RULES:
+      - Be precise. Do not guess dates if they aren't in the image.
+      - If the image is a generic loose pill without text, identify it by shape/color/imprint if possible, but lower your confidence score and add a warning.
+      - Structure the response strictly according to the schema.
+    `;
+
+    const parts: any[] = [];
+
+    if (image) {
+      const matches = image.match(/^data:(.+);base64,(.+)$/);
+      if (matches) {
+        parts.push({ inlineData: { mimeType: matches[1], data: matches[2] } });
+      } else {
+        parts.push({ inlineData: { mimeType: 'image/png', data: image } });
+      }
+    }
+
+    parts.push({ 
+      text: `Analyze this medication. Input: "${query}". ${image ? '[IMAGE ATTACHED]' : ''} \n\nExtract all visible details (dates, manufacturer) and provide deep clinical info.` 
+    });
+
+    const response = await ai.models.generateContent({
+      model: modelId,
+      contents: { parts },
+      config: {
+        systemInstruction: systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: MEDICATION_SCHEMA,
+        temperature: 0.1, // Very low temp for factual accuracy
+      },
+    });
+
+    if (!response.text) {
+      throw new Error("Failed to analyze medication.");
+    }
+
+    return JSON.parse(response.text) as MedicationResponse;
+
+  } catch (error) {
+    console.error("Medication Analysis Error:", error);
+    throw new Error("Medication analysis failed. Please ensure the image is clear or the name is correct.");
+  }
+};
+
 export const generatePatientSample = async (): Promise<string> => {
   try {
     const modelId = 'gemini-2.5-flash';
@@ -114,7 +226,7 @@ export const generatePatientSample = async (): Promise<string> => {
       model: modelId,
       contents: "Generate a short, realistic, first-person description of a patient experiencing a specific set of medical symptoms (approx 30-50 words). Do not mention the diagnosis name. Vary the specialty (neurology, cardiology, gastro, etc.).",
       config: {
-        temperature: 1.0, // High creativity for variety
+        temperature: 1.0, 
       }
     });
     return response.text || "I've been having a persistent throbbing headache on the left side of my head for 2 days, accompanied by nausea and sensitivity to light.";
