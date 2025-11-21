@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
+      // Polyfill process.env to prevent 'process is not defined' crashes in browser environments
+      window.process = window.process || { env: {} };
+      
       tailwind.config = {
         darkMode: 'class',
         theme: {
@@ -26,6 +29,7 @@
             },
             animation: {
               'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'slide-up-fade': 'slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
               'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'glow': 'glow 2s ease-in-out infinite alternate',
               'shimmer': 'shimmer 2s linear infinite',
@@ -34,6 +38,10 @@
             keyframes: {
               fadeInUp: {
                 '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              slideUpFade: {
+                '0%': { opacity: '0', transform: 'translateY(40px)' },
                 '100%': { opacity: '1', transform: 'translateY(0)' },
               },
               glow: {
@@ -63,6 +71,7 @@
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(124, 58, 237, 0.1);
+        transition: background 0.3s ease;
       }
       .glass-panel-strong {
         background: rgba(17, 12, 29, 0.9);
@@ -70,6 +79,28 @@
         -webkit-backdrop-filter: blur(16px);
         border-bottom: 1px solid rgba(124, 58, 237, 0.1);
       }
+      /* Spotlight effect class */
+      .spotlight-card {
+        position: relative;
+        overflow: hidden;
+      }
+      .spotlight-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(124, 58, 237, 0.15), transparent 40%);
+        opacity: 0;
+        transition: opacity 0.5s;
+        pointer-events: none;
+        z-index: 1;
+      }
+      .spotlight-card:hover::before {
+        opacity: 1;
+      }
+
       /* Custom scrollbar */
       ::-webkit-scrollbar {
         width: 6px;

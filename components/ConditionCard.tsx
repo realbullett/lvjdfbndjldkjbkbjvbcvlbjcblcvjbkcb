@@ -12,16 +12,19 @@ export const ConditionCard: React.FC<ConditionCardProps> = ({ condition, rank })
   const isTopMatch = rank === 1;
 
   return (
-    <div className={`
-      relative rounded-2xl transition-all duration-300 overflow-hidden backdrop-blur-sm
-      ${isTopMatch 
-        ? 'bg-brand-panel/80 border border-brand-primary/50 shadow-[0_0_30px_rgba(124,58,237,0.15)] scale-[1.005] md:scale-[1.01] z-10' 
-        : 'bg-brand-panel/40 border border-brand-border hover:border-brand-primary/30 hover:bg-brand-panel/60'
-      }
-    `}>
+    <div 
+      className={`
+        relative rounded-2xl transition-all duration-500 ease-out overflow-hidden backdrop-blur-sm animate-slide-up-fade opacity-0
+        ${isTopMatch 
+          ? 'bg-brand-panel/80 border border-brand-primary/50 shadow-[0_0_30px_rgba(124,58,237,0.15)] z-10 hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(124,58,237,0.25)]' 
+          : 'bg-brand-panel/40 border border-brand-border hover:border-brand-primary/30 hover:bg-brand-panel/60 hover:scale-[1.01] hover:shadow-lg'
+        }
+      `}
+      style={{ animationDelay: `${rank * 150}ms` }}
+    >
       {isTopMatch && (
         <div className="absolute top-0 right-0">
-          <div className="bg-gradient-to-l from-brand-primary to-purple-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 md:px-4 rounded-bl-xl shadow-sm">
+          <div className="bg-gradient-to-l from-brand-primary to-purple-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 md:px-4 rounded-bl-xl shadow-sm animate-fade-in-up">
             Primary Match
           </div>
         </div>
@@ -31,10 +34,10 @@ export const ConditionCard: React.FC<ConditionCardProps> = ({ condition, rank })
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="flex items-start gap-4">
             <div className={`
-              flex items-center justify-center w-10 h-10 rounded-lg shrink-0 font-bold text-sm border
+              flex items-center justify-center w-10 h-10 rounded-lg shrink-0 font-bold text-sm border transition-colors duration-300
               ${isTopMatch 
                 ? 'bg-brand-primary/20 text-brand-glow border-brand-primary/30' 
-                : 'bg-white/5 text-gray-400 border-white/10'}
+                : 'bg-white/5 text-gray-400 border-white/10 group-hover:border-white/20'}
             `}>
               #{rank}
             </div>
@@ -56,12 +59,12 @@ export const ConditionCard: React.FC<ConditionCardProps> = ({ condition, rank })
           </div>
           
           {/* Probability Gauge - Redesigned for vertical layering */}
-          <div className="md:col-span-4 bg-black/20 rounded-xl p-4 border border-brand-border flex flex-col justify-center items-center relative overflow-hidden min-h-[100px] md:min-h-[120px]">
+          <div className="md:col-span-4 bg-black/20 rounded-xl p-4 border border-brand-border flex flex-col justify-center items-center relative overflow-hidden min-h-[100px] md:min-h-[120px] group/gauge">
              {/* Ambient background for depth */}
-             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-brand-primary/5 pointer-events-none" />
+             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-brand-primary/5 pointer-events-none transition-opacity group-hover/gauge:opacity-100 opacity-50" />
              
              <div className="relative z-10 flex flex-col items-center w-full">
-               <span className={`text-3xl md:text-4xl font-bold mb-1 ${isTopMatch ? 'text-brand-glow drop-shadow-[0_0_8px_rgba(167,139,250,0.4)]' : 'text-gray-300'}`}>
+               <span className={`text-3xl md:text-4xl font-bold mb-1 transition-all duration-300 ${isTopMatch ? 'text-brand-glow drop-shadow-[0_0_8px_rgba(167,139,250,0.4)]' : 'text-gray-300 group-hover/gauge:text-white'}`}>
                   {condition.probability}%
                </span>
                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">
@@ -87,7 +90,7 @@ export const ConditionCard: React.FC<ConditionCardProps> = ({ condition, rank })
              <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Matched Symptoms</h4>
              <div className="flex flex-wrap gap-2">
                {condition.symptoms_matched.map((sym, idx) => (
-                 <span key={idx} className="inline-flex items-center text-xs font-medium bg-white/5 text-gray-300 px-3 py-1.5 rounded-md border border-white/10">
+                 <span key={idx} className="inline-flex items-center text-xs font-medium bg-white/5 text-gray-300 px-3 py-1.5 rounded-md border border-white/10 hover:bg-white/10 transition-colors cursor-default">
                    <Check size={12} className="mr-1.5 text-brand-accent" />
                    {sym}
                  </span>
@@ -96,7 +99,7 @@ export const ConditionCard: React.FC<ConditionCardProps> = ({ condition, rank })
           </div>
 
           {/* Recommendations */}
-          <div className="bg-brand-primary/5 rounded-xl p-4 border border-brand-primary/10">
+          <div className="bg-brand-primary/5 rounded-xl p-4 border border-brand-primary/10 hover:bg-brand-primary/10 transition-colors duration-300">
             <h4 className="text-[10px] font-bold text-brand-glow uppercase tracking-widest mb-3 flex items-center gap-2">
               <Activity size={14} /> Clinical Recommendations
             </h4>

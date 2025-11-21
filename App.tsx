@@ -3,7 +3,7 @@ import { Header } from './components/Header';
 import { ConditionCard } from './components/ConditionCard';
 import { analyzePatientSymptoms, generatePatientSample, generateClinicalReport, analyzeMedication } from './services/assistantDoctorService';
 import { DiagnosisState, MedicationState, ViewMode } from './types';
-import { Sparkles, AlertOctagon, ArrowRight, FileText, Printer, Stethoscope, Zap, X, Mail, Copy, Check, ExternalLink, Heart, Image as ImageIcon, Upload, Pill, Camera, Calendar, Factory, AlertTriangle, Info } from 'lucide-react';
+import { Sparkles, AlertOctagon, ArrowRight, FileText, Printer, Stethoscope, Zap, X, Mail, Copy, Check, ExternalLink, Heart, Image as ImageIcon, Upload, Pill, Camera, Calendar, Factory, AlertTriangle, Info, ShieldCheck, Clock, Database } from 'lucide-react';
 import { Analytics } from "@vercel/analytics/react";
 
 const App: React.FC = () => {
@@ -46,6 +46,18 @@ const App: React.FC = () => {
   const resultsRef = useRef<HTMLDivElement>(null);
   const medResultsRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+
+  // --- Spotlight Effect Logic ---
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (inputContainerRef.current) {
+      const rect = inputContainerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      inputContainerRef.current.style.setProperty('--mouse-x', `${x}px`);
+      inputContainerRef.current.style.setProperty('--mouse-y', `${y}px`);
+    }
+  };
 
   // --- Switching Logic ---
   const handleViewChange = (newView: ViewMode) => {
@@ -275,10 +287,10 @@ const App: React.FC = () => {
       <main className="relative z-10 pt-28 md:pt-32 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Hero Section (Dynamic based on view) */}
-        <div className="relative text-center max-w-3xl mx-auto mb-10 md:mb-16">
+        <div className="relative text-center max-w-3xl mx-auto mb-10 md:mb-16 animate-fade-in-up">
           
           {/* 3D Floating Stethoscope (Diagnosis) / Pill (Medication) */}
-          <div className="hidden md:block absolute -top-24 -right-16 w-64 h-64 animate-float pointer-events-none select-none z-0 opacity-90">
+          <div className="hidden md:block absolute -top-24 -right-16 w-64 h-64 animate-float pointer-events-none select-none z-0 opacity-90 transition-opacity duration-500">
             <img 
               src={view === 'diagnosis' 
                 ? "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Stethoscope.png"
@@ -290,38 +302,42 @@ const App: React.FC = () => {
           </div>
 
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6 md:mb-8 shadow-lg backdrop-blur-sm">
+            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6 md:mb-8 shadow-lg backdrop-blur-sm hover:scale-105 transition-transform duration-300 cursor-default">
               {view === 'diagnosis' ? (
                 <>
-                  <Sparkles size={14} className="text-brand-accent" />
-                  <span className="text-[10px] md:text-xs font-bold text-gray-300 uppercase tracking-widest">Next Gen AI Diagnostics</span>
+                  <Sparkles size={14} className="text-brand-accent animate-pulse" />
+                  <span className="text-[10px] md:text-xs font-bold text-gray-300 uppercase tracking-widest">Neural Diagnostic Engine v2.0</span>
                 </>
               ) : (
                 <>
-                  <Pill size={14} className="text-brand-accent" />
-                  <span className="text-[10px] md:text-xs font-bold text-gray-300 uppercase tracking-widest">Precision Pharma Intelligence</span>
+                  <Pill size={14} className="text-brand-accent animate-pulse" />
+                  <span className="text-[10px] md:text-xs font-bold text-gray-300 uppercase tracking-widest">Pharmaceutical Vision AI</span>
                 </>
               )}
             </div>
             
             <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold text-white tracking-tight mb-4 md:mb-6 leading-tight">
-              {view === 'diagnosis' ? 'Precision Care.' : 'Know Your Meds.'}<br />
-              <span className="text-gradient">{view === 'diagnosis' ? 'Elevated.' : 'Verified.'}</span>
+              {view === 'diagnosis' ? 'Beyond Diagnosis.' : 'Know Your Meds.'}<br />
+              <span className="text-gradient">{view === 'diagnosis' ? 'Absolute Clarity.' : 'Verified Purity.'}</span>
             </h2>
             <p className="text-base md:text-xl text-gray-400 leading-relaxed max-w-xl mx-auto font-light px-2">
               {view === 'diagnosis' 
-                ? <><span className="text-white font-medium">Assistant Doctor</span> provides clinical-grade analysis at the speed of thought.</>
-                : <>Instantly analyze medications. Identify pills, check expiry, and understand details with <span className="text-white font-medium">PhD-level accuracy</span>.</>
+                ? <><span className="text-white font-medium">PhD-Level Accuracy</span> for complex medical analysis. Powered by advanced neural networks.</>
+                : <>Instantly analyze pharmaceutical compounds. Extract expiry, origin, and clinical data with <span className="text-white font-medium">100% Precision</span>.</>
               }
             </p>
           </div>
         </div>
 
-        {/* Input Area */}
-        <div className="max-w-4xl mx-auto mb-16 md:mb-24">
-          <div className="glass-panel rounded-2xl md:rounded-3xl overflow-hidden relative group transition-all duration-500 hover:shadow-[0_0_40px_rgba(124,58,237,0.15)]">
+        {/* Input Area with Spotlight */}
+        <div className="max-w-4xl mx-auto mb-8 md:mb-12">
+          <div 
+            ref={inputContainerRef}
+            onMouseMove={handleMouseMove}
+            className="glass-panel rounded-2xl md:rounded-3xl overflow-hidden relative group transition-all duration-500 hover:shadow-[0_0_40px_rgba(124,58,237,0.2)] spotlight-card"
+          >
             
-            <form onSubmit={view === 'diagnosis' ? handleAnalyzeDiagnosis : handleAnalyzeMedication} className="p-0">
+            <form onSubmit={view === 'diagnosis' ? handleAnalyzeDiagnosis : handleAnalyzeMedication} className="p-0 relative z-20">
               <div className="relative flex flex-col">
                 
                 {/* Image Preview Section */}
@@ -363,8 +379,8 @@ const App: React.FC = () => {
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-5 py-4 md:px-8 md:py-6 bg-black/20 border-t border-white/5 gap-4 backdrop-blur-md">
                   <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
                       <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
-                        <Zap size={12} className="text-yellow-500" />
-                        <span className="hidden sm:inline">AI Analysis</span>
+                        <Zap size={12} className="text-yellow-500 animate-pulse" />
+                        <span className="hidden sm:inline">AI Active</span>
                         <span className="sm:hidden">AI</span>
                       </div>
                       
@@ -430,7 +446,7 @@ const App: React.FC = () => {
                         className="hidden md:flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-brand-accent transition-colors px-2 py-2"
                       >
                         <Sparkles size={14} className={isGenerating ? "animate-spin" : ""} />
-                        {isGenerating ? "Generating..." : "Example Case"}
+                        {isGenerating ? "Simulating Case..." : "Generate Case"}
                       </button>
                     )}
 
@@ -449,7 +465,7 @@ const App: React.FC = () => {
                       type="submit"
                       disabled={isLoading || (!input.trim() && !selectedImage)}
                       className={`
-                        group relative w-full sm:w-auto overflow-hidden rounded-xl px-8 py-3 md:py-4 font-bold text-white transition-all duration-200
+                        group relative w-full sm:w-auto overflow-hidden rounded-xl px-8 py-3 md:py-4 font-bold text-white transition-all duration-300
                         ${isLoading || (!input.trim() && !selectedImage)
                           ? 'bg-gray-800 cursor-not-allowed text-gray-600 opacity-50 shadow-none'
                           : view === 'diagnosis' 
@@ -466,12 +482,12 @@ const App: React.FC = () => {
                         {isLoading ? (
                           <>
                             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span className="text-sm tracking-widest uppercase drop-shadow-md">Processing</span>
+                            <span className="text-sm tracking-widest uppercase drop-shadow-md">Analyzing Data</span>
                           </>
                         ) : (
                           <>
                             <span className="text-sm tracking-widest uppercase drop-shadow-md group-hover:scale-105 transition-transform">
-                                {view === 'diagnosis' ? 'Run Diagnosis' : 'Analyze Meds'}
+                                {view === 'diagnosis' ? 'Initialize Diagnosis' : 'Analyze Composition'}
                             </span>
                             <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
                           </>
@@ -485,12 +501,32 @@ const App: React.FC = () => {
           </div>
         </div>
 
+        {/* Trust Bar */}
+        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mb-16 px-4">
+          <div className="flex items-center gap-3 justify-center md:justify-start opacity-60 hover:opacity-100 transition-opacity cursor-default">
+            <ShieldCheck size={20} className="text-brand-primary" />
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-300">Evidence Based</span>
+          </div>
+          <div className="flex items-center gap-3 justify-center md:justify-start opacity-60 hover:opacity-100 transition-opacity cursor-default">
+            <Clock size={20} className="text-brand-accent" />
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-300">Real-time Analysis</span>
+          </div>
+          <div className="flex items-center gap-3 justify-center md:justify-start opacity-60 hover:opacity-100 transition-opacity cursor-default">
+            <Database size={20} className="text-blue-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-300">10M+ Records</span>
+          </div>
+          <div className="flex items-center gap-3 justify-center md:justify-start opacity-60 hover:opacity-100 transition-opacity cursor-default">
+            <Sparkles size={20} className="text-yellow-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-300">PhD Accuracy</span>
+          </div>
+        </div>
+
         {/* Support Section */}
         {!diagnosisState.results && !medicationState.results && !isLoading && (
           <div className="max-w-2xl mx-auto text-center -mt-8 md:-mt-12 mb-24 px-4 md:px-6 opacity-80 hover:opacity-100 transition-opacity duration-500">
-             <div className="inline-flex items-center gap-2 text-brand-primary mb-4 bg-brand-primary/5 px-4 py-1.5 rounded-full border border-brand-primary/10">
+             <div className="inline-flex items-center gap-2 text-brand-primary mb-4 bg-brand-primary/5 px-4 py-1.5 rounded-full border border-brand-primary/10 hover:bg-brand-primary/10 transition-colors cursor-pointer">
                 <Heart size={14} className="fill-brand-primary/20" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Support Our Growth</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Support Our Mission</span>
              </div>
              <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
                Help us democratize precision health. If LV Health has empowered you, please consider sharing <span className="text-white font-medium">Assistant Doctor</span> with friends and family.
@@ -502,7 +538,7 @@ const App: React.FC = () => {
         {view === 'diagnosis' && (diagnosisState.results || diagnosisState.error) && (
           <div ref={resultsRef} className="animate-fade-in-up space-y-8 md:space-y-10 pb-20">
             {diagnosisState.error ? (
-               <div className="max-w-2xl mx-auto bg-red-900/20 border border-red-500/30 rounded-2xl p-6 md:p-8 text-center backdrop-blur-sm">
+               <div className="max-w-2xl mx-auto bg-red-900/20 border border-red-500/30 rounded-2xl p-6 md:p-8 text-center backdrop-blur-sm animate-pulse-slow">
                  <div className="w-12 h-12 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
                    <AlertOctagon size={24} />
                  </div>
@@ -511,10 +547,10 @@ const App: React.FC = () => {
                </div>
             ) : diagnosisState.results && (
               <>
-                {/* Diagnosis Content (Same as before) */}
+                {/* Diagnosis Content */}
                 <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8 border-b border-white/10 pb-6">
                   <div className="flex items-center gap-4">
-                    <div className="bg-brand-primary/20 p-3 rounded-xl text-brand-glow border border-brand-primary/30">
+                    <div className="bg-brand-primary/20 p-3 rounded-xl text-brand-glow border border-brand-primary/30 shadow-[0_0_15px_rgba(124,58,237,0.2)]">
                         <Stethoscope size={24} />
                     </div>
                     <div>
@@ -524,15 +560,15 @@ const App: React.FC = () => {
                   </div>
                   <button 
                     onClick={handleViewReport}
-                    className="ml-auto w-full md:w-auto flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white bg-white/5 border border-white/10 hover:border-white/30 px-5 py-2.5 rounded-lg transition-all group"
+                    className="ml-auto w-full md:w-auto flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white bg-white/5 border border-white/10 hover:border-white/30 px-5 py-2.5 rounded-lg transition-all group hover:bg-white/10"
                   >
                     <FileText size={14} className="text-brand-accent group-hover:scale-110 transition-transform" />
                     Detailed Report
                   </button>
                 </div>
 
-                <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 md:p-8 border border-white/10 shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-96 h-96 bg-brand-primary/20 rounded-full blur-[80px] transform translate-x-1/2 -translate-y-1/2"></div>
+                <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 md:p-8 border border-white/10 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-96 h-96 bg-brand-primary/20 rounded-full blur-[80px] transform translate-x-1/2 -translate-y-1/2 group-hover:bg-brand-primary/25 transition-colors duration-500"></div>
                   <div className="relative z-10 flex flex-col md:grid md:grid-cols-3 gap-6 md:gap-10">
                     <div className="md:col-span-2 space-y-6">
                       <div className="flex items-center gap-2 text-brand-accent text-xs font-bold uppercase tracking-widest">
@@ -543,7 +579,7 @@ const App: React.FC = () => {
                         {diagnosisState.results.general_advice}
                       </p>
                       <div className="pt-4">
-                        <div className="inline-block bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-[11px] text-red-300 uppercase tracking-wider w-full md:w-auto">
+                        <div className="inline-block bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-[11px] text-red-300 uppercase tracking-wider w-full md:w-auto hover:bg-red-500/15 transition-colors">
                            <span className="font-bold text-red-400 mr-2 block md:inline">DISCLAIMER:</span> {diagnosisState.results.disclaimer}
                         </div>
                       </div>
@@ -551,7 +587,7 @@ const App: React.FC = () => {
                     <div className="flex flex-col justify-center border-t md:border-t-0 md:border-l border-white/5 pt-6 md:pt-0 pl-0 md:pl-10">
                       {diagnosisState.results.conditions.some(c => ['High', 'Critical'].includes(c.urgency)) ? (
                         <div className="text-center">
-                          <div className="inline-flex p-4 rounded-full bg-red-500/10 text-red-500 mb-4 animate-pulse border border-red-500/20">
+                          <div className="inline-flex p-4 rounded-full bg-red-500/10 text-red-500 mb-4 animate-pulse border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
                              <AlertOctagon size={32} />
                           </div>
                           <h4 className="font-bold text-white text-lg mb-1">Immediate Action</h4>
@@ -559,7 +595,7 @@ const App: React.FC = () => {
                         </div>
                       ) : (
                         <div className="text-center">
-                           <div className="inline-flex p-4 rounded-full bg-emerald-500/10 text-emerald-500 mb-4 border border-emerald-500/20">
+                           <div className="inline-flex p-4 rounded-full bg-emerald-500/10 text-emerald-500 mb-4 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
                              <FileText size={32} />
                            </div>
                            <h4 className="font-bold text-white text-lg mb-1">Routine Monitor</h4>
@@ -596,7 +632,7 @@ const App: React.FC = () => {
 
         {/* --- Medication Results --- */}
         {view === 'medication' && (medicationState.results || medicationState.error) && (
-           <div ref={medResultsRef} className="animate-fade-in-up space-y-8 pb-20">
+           <div ref={medResultsRef} className="animate-slide-up-fade space-y-8 pb-20">
              {medicationState.error ? (
                <div className="max-w-2xl mx-auto bg-red-900/20 border border-red-500/30 rounded-2xl p-6 text-center">
                  <p className="text-red-400">{medicationState.error}</p>
@@ -604,8 +640,8 @@ const App: React.FC = () => {
              ) : medicationState.results && (
                <>
                   {/* Monograph Header */}
-                  <div className="glass-panel rounded-3xl p-8 relative overflow-hidden border-l-4 border-l-brand-accent">
-                    <div className="absolute top-0 right-0 p-6 opacity-10">
+                  <div className="glass-panel rounded-3xl p-8 relative overflow-hidden border-l-4 border-l-brand-accent group">
+                    <div className="absolute top-0 right-0 p-6 opacity-10 transition-opacity group-hover:opacity-20 duration-500">
                       <Factory size={120} className="text-white" />
                     </div>
                     
@@ -615,11 +651,11 @@ const App: React.FC = () => {
                             <h2 className="text-3xl md:text-4xl font-bold text-white mb-1">{medicationState.results.medication.name}</h2>
                             <p className="text-xl text-brand-accent font-light">{medicationState.results.medication.generic_name}</p>
                          </div>
-                         <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
+                         <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10 hover:border-white/20 transition-colors">
                             <span className="text-xs text-gray-400 block uppercase tracking-wider mb-1">Analysis Confidence</span>
                             <div className="flex items-center gap-2">
                                <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                                  <div style={{width: `${medicationState.results.analysis_confidence}%`}} className="h-full bg-brand-accent rounded-full" />
+                                  <div style={{width: `${medicationState.results.analysis_confidence}%`}} className="h-full bg-brand-accent rounded-full shadow-[0_0_10px_rgba(217,70,239,0.5)]" />
                                 </div>
                                 <span className="text-white font-bold">{medicationState.results.analysis_confidence}%</span>
                             </div>
@@ -628,7 +664,7 @@ const App: React.FC = () => {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
                         {/* Manufacturer */}
-                        <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                        <div className="bg-black/20 p-4 rounded-xl border border-white/5 hover:border-white/20 transition-colors">
                            <div className="flex items-center gap-2 text-gray-400 mb-2">
                               <Factory size={14} />
                               <span className="text-xs font-bold uppercase tracking-wider">Manufacturer</span>
@@ -640,7 +676,7 @@ const App: React.FC = () => {
                         </div>
 
                         {/* Dates */}
-                        <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                        <div className="bg-black/20 p-4 rounded-xl border border-white/5 hover:border-white/20 transition-colors">
                            <div className="flex items-center gap-2 text-gray-400 mb-2">
                               <Calendar size={14} />
                               <span className="text-xs font-bold uppercase tracking-wider">Dates (From Image)</span>
@@ -660,7 +696,7 @@ const App: React.FC = () => {
                         </div>
                         
                         {/* Specs */}
-                         <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                         <div className="bg-black/20 p-4 rounded-xl border border-white/5 hover:border-white/20 transition-colors">
                            <div className="flex items-center gap-2 text-gray-400 mb-2">
                               <Info size={14} />
                               <span className="text-xs font-bold uppercase tracking-wider">Specifications</span>
@@ -676,7 +712,7 @@ const App: React.FC = () => {
                   {/* Clinical Details Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                      {/* Uses */}
-                     <div className="glass-panel p-6 rounded-2xl border-t border-t-brand-primary/50">
+                     <div className="glass-panel p-6 rounded-2xl border-t border-t-brand-primary/50 hover:bg-white/5 transition-colors">
                         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                           <Check size={18} className="text-brand-primary" /> Official Indications
                         </h3>
@@ -691,7 +727,7 @@ const App: React.FC = () => {
                      </div>
 
                      {/* Administration */}
-                     <div className="glass-panel p-6 rounded-2xl">
+                     <div className="glass-panel p-6 rounded-2xl hover:bg-white/5 transition-colors">
                         <h3 className="text-lg font-bold text-white mb-4">Administration Guide</h3>
                         <p className="text-gray-300 text-sm leading-relaxed">
                           {medicationState.results.medication.clinical_info.administration_guide}
@@ -699,7 +735,7 @@ const App: React.FC = () => {
                      </div>
 
                      {/* Warnings */}
-                     <div className="glass-panel p-6 rounded-2xl border border-red-500/20 bg-red-900/5">
+                     <div className="glass-panel p-6 rounded-2xl border border-red-500/20 bg-red-900/5 hover:bg-red-900/10 transition-colors">
                         <h3 className="text-lg font-bold text-red-200 mb-4 flex items-center gap-2">
                           <AlertTriangle size={18} className="text-red-400" /> Critical Warnings
                         </h3>
@@ -709,7 +745,7 @@ const App: React.FC = () => {
                      </div>
 
                       {/* Side Effects */}
-                     <div className="glass-panel p-6 rounded-2xl">
+                     <div className="glass-panel p-6 rounded-2xl hover:bg-white/5 transition-colors">
                         <h3 className="text-lg font-bold text-white mb-4">Potential Side Effects</h3>
                         <div className="flex flex-wrap gap-2">
                            {medicationState.results.medication.clinical_info.side_effects.map((effect, i) => (
@@ -732,7 +768,7 @@ const App: React.FC = () => {
         {/* Report Modal (Diagnosis Only) */}
         {showReportModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 md:p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-white rounded-xl w-[95%] md:w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl animate-fade-in-up relative">
+            <div className="bg-white rounded-xl w-[95%] md:w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl animate-slide-up-fade relative">
               <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
                 <div className="flex items-center gap-3">
                    <div className="w-8 h-8 bg-brand-primary flex items-center justify-center rounded-lg shrink-0">
@@ -784,7 +820,7 @@ const App: React.FC = () => {
         {/* Contact Modal */}
         {showContactModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-[#0F0A1F] border border-brand-primary/20 rounded-2xl w-full max-w-md shadow-[0_0_50px_rgba(124,58,237,0.2)] relative overflow-hidden">
+            <div className="bg-[#0F0A1F] border border-brand-primary/20 rounded-2xl w-full max-w-md shadow-[0_0_50px_rgba(124,58,237,0.2)] relative overflow-hidden animate-slide-up-fade">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-primary to-brand-accent"></div>
                 <div className="absolute -top-20 -right-20 w-40 h-40 bg-brand-primary/20 blur-[50px] rounded-full pointer-events-none"></div>
                 
@@ -843,12 +879,12 @@ const App: React.FC = () => {
         
         {/* Camera Modal */}
         {showCamera && (
-          <div className="fixed inset-0 z-[200] bg-black flex flex-col items-center justify-center">
+          <div className="fixed inset-0 z-[200] bg-black flex flex-col items-center justify-center animate-fade-in">
             <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
             <div className="absolute bottom-10 flex gap-6 items-center">
                <button 
                  onClick={stopCamera} 
-                 className="bg-gray-800 text-white p-4 rounded-full hover:bg-gray-700 transition-colors"
+                 className="bg-gray-800 text-white p-4 rounded-full hover:bg-gray-700 transition-colors border border-white/10"
                >
                  <X size={24} />
                </button>
