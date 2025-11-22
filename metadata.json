@@ -1,6 +1,6 @@
 {
   "name": "LV Assistant Doctor",
-  "description": "Premium AI-powered health diagnostics by LV Health.",
+  "description": "PhD-level AI health diagnostics and medication analysis. Instant, accurate medical insights by LV Health.",
   "requestFramePermissions": [
     "camera"
   ]
